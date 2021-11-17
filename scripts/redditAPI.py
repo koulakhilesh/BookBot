@@ -115,8 +115,8 @@ class RedditCorpus():
         self.df_comments['commentScore']=commentScore
         self.df_comments['comment']=comment
         if self.saveLocal==True:  
-            self.df_corpus.to_csv('df_corpus.csv',)
-            self.df_comments.to_csv('df_comments.csv')
+            self.df_corpus.to_csv('../data/df_corpus.csv',)
+            self.df_comments.to_csv('../data/df_comments.csv')
         return self.df_corpus, self.df_comments  
 
 
@@ -251,7 +251,7 @@ class RedditCorpus():
         self.df_bookauthor=self.df_bookauthor.copy()
         self.df_bookauthor.drop_duplicates(subset=['bookID', 'book'], keep='first',inplace=True)
         if self.saveLocal==True:  
-            self.df_bookauthor.to_csv('df_bookauthor.csv')
+            self.df_bookauthor.to_csv('../data/df_bookauthor.csv')
             
         return self.df_bookauthor
              
@@ -260,7 +260,7 @@ if __name__ == '__main__':
     
     
     RedditCorpusClass=RedditCorpus(start_time=datetime.datetime(2018, 1, 1),
-                                   end_time=datetime.datetime(2021, 11, 15),
+                                   end_time=datetime.datetime(2018, 1, 10),
                                    deltaDay=1,
                                    subreddit='suggestmeabook',
                                    PostScoreThresh=10,
