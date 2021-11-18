@@ -260,7 +260,7 @@ if __name__ == '__main__':
     
     
     RedditCorpusClass=RedditCorpus(start_time=datetime.datetime(2018, 1, 1),
-                                   end_time=datetime.datetime(2018, 1, 10),
+                                   end_time=datetime.datetime(2021, 11, 15),
                                    deltaDay=1,
                                    subreddit='suggestmeabook',
                                    PostScoreThresh=10,

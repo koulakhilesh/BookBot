@@ -36,19 +36,33 @@ from sklearn.neighbors import NearestNeighbors
 
 class suggestModel():
     
-    def __init__(self,df_corpus_path=None,df_bookauthor_path=None,df_merge_path=None,notebook=False):
+    def __init__(self,df_corpus_path='df_corpus.csv',df_bookauthor_path='df_bookauthor.csv',df_merge_path='df_merge.csv',notebook=False):
         
-        self.df_corpus_path=df_corpus_path
-        self.df_text=pd.read_csv(df_corpus_path)
-        self.df_text["postTitle"].replace(np.nan, "",inplace=True)
+        if notebook== False:
+            self.pkl_path='../pkl_files/'
+            self.data_path='../data/'
+               
+        elif notebook == True:
+            self.pkl_path='pkl_files/'
+            self.data_path='data/'
+        
+        
+        self.df_corpus_path=self.data_path+df_corpus_path
+        self.df_text=pd.read_csv(self.df_corpus_path)
+        self.df_text["postText"].replace(np.nan, "",inplace=True)
         self.df_text["text"] = self.df_text["postTitle"].astype(str) + str(" ") + self.df_text["postText"].astype(str)
         
-        self.df_bookauthor_path=df_bookauthor_path
-        self.df_book=pd.read_csv(df_bookauthor_path)
+        
+        self.df_bookauthor_path=self.data_path+df_bookauthor_path
+        self.df_book=pd.read_csv(self.df_bookauthor_path)
         self.df_book=self.df_book[self.df_book['bookPrinttype']=='BOOK']
-   
-        self.df_merge_path=df_merge_path
-        self.notebook=notebook
+        self.df_book.dropna(subset=['bookImage','bookDescription','bookCategory'],inplace=True)
+        self.df_book.to_csv(self.df_bookauthor_path)
+       
+        self.df_merge_path=self.data_path+df_merge_path
+        
+        
+            
        
      
         
@@ -70,18 +84,12 @@ class suggestModel():
         
         if train==True:
             PUNCT_TO_REMOVE = '!"#$%&\'()*+,-./:;<=>?@[\\]^_{|}~”“`'
-            if self.notebook== False:
-                with open('../pkl_files/PUNCT_TO_REMOVE.pkl', 'wb') as f:
-                       pickle.dump(PUNCT_TO_REMOVE, f)
-            elif self.notebook == True:
-                with open('pkl_files/PUNCT_TO_REMOVE.pkl', 'wb') as f:
-                       pickle.dump(PUNCT_TO_REMOVE, f)           
-        if self.notebook== False:
-            with open('../pkl_files/PUNCT_TO_REMOVE.pkl', 'rb') as f:
+            with open(self.pkl_path+'PUNCT_TO_REMOVE.pkl', 'wb') as f:
+                pickle.dump(PUNCT_TO_REMOVE, f)
+                
+        with open(self.pkl_path+'PUNCT_TO_REMOVE.pkl', 'rb') as f:
                 PUNCT_TO_REMOVE = pickle.load(f)   
-        elif self.notebook == True:
-            with open('pkl_files/PUNCT_TO_REMOVE.pkl', 'rb') as f:
-                PUNCT_TO_REMOVE = pickle.load(f)        
+               
         return text.translate(str.maketrans('', '', PUNCT_TO_REMOVE))
 
 
@@ -97,22 +105,14 @@ class suggestModel():
             for text in self.df_text["text"].values:
                 for word in text.split():
                     cnt[word] += 1
-            if self.notebook== False:        
-                with open('../pkl_files/mostCommonWords.pkl', 'wb') as f:
-                    pickle.dump(cnt.most_common(10), f)
-                    
-            elif self.notebook== False:
-                with open('pkl_files/mostCommonWords.pkl', 'wb') as f:
-                    pickle.dump(cnt.most_common(10), f)
-            mostCommonWords= cnt.most_common(10)
+              
+            with open(self.pkl_path+'mostCommonWords.pkl', 'wb') as f:
+                pickle.dump(cnt.most_common(10), f)
                 
-            
-        if self.notebook== False:  
-            with open('../pkl_files/mostCommonWords.pkl', 'rb') as f:
-                mostCommonWords = pickle.load(f) 
-        elif self.notebook== True:  
-            with open('pkl_files/mostCommonWords.pkl', 'rb') as f:
-                mostCommonWords = pickle.load(f) 
+            mostCommonWords= cnt.most_common(10)
+                     
+        with open(self.pkl_path+'mostCommonWords.pkl', 'rb') as f:
+            mostCommonWords = pickle.load(f) 
         
         FREQWORDS = set([w for (w, wc) in mostCommonWords])
         return " ".join([word for word in str(text).split() if word not in FREQWORDS])
@@ -126,37 +126,30 @@ class suggestModel():
 
     def trainData(self):
         self.df_text['bookID']=self.df_text['postID']
-        
+    
         self.df = pd.merge(self.df_book, self.df_text, how="left", on=["bookID"])
-        self.df=self.df[self.df['bookPrinttype']=='BOOK']
+        self.df = pd.merge(self.df_book, self.df_text, how="left", on=["bookID"])
+        self.df.dropna(subset=['bookImage','bookDescription','bookCategory'],inplace=True)
         self.df.to_csv(self.df_merge_path)
         
     
         tfidfvectorizer = TfidfVectorizer()
         df_text_vector = tfidfvectorizer.fit_transform(self.df['text'])
-        if self.notebook== False:  
-            with open('../pkl_files/tfidfvectorizer.pkl', 'wb') as f:
-                   pickle.dump(tfidfvectorizer, f)
-        elif self.notebook== True:  
-            with open('pkl_files/tfidfvectorizer.pkl', 'wb') as f:
-                   pickle.dump(tfidfvectorizer, f)
+         
+        with open(self.pkl_path+'tfidfvectorizer.pkl', 'wb') as f:
+               pickle.dump(tfidfvectorizer, f)
+
         tfidftransformer = TfidfTransformer()
         df_text_tfidf = tfidftransformer.fit_transform(df_text_vector)
      
-        if self.notebook== False: 
-            with open('../pkl_files/tfidftransformer.pkl', 'wb') as f:
-                   pickle.dump(tfidftransformer, f)
-        elif self.notebook== True: 
-            with open('pkl_files/tfidftransformer.pkl', 'wb') as f:
-                   pickle.dump(tfidftransformer, f)
+        with open(self.pkl_path+'tfidftransformer.pkl', 'wb') as f:
+               pickle.dump(tfidftransformer, f)
+       
         neighModel = NearestNeighbors(n_neighbors=5)
         neighModel.fit(df_text_tfidf)
-        if self.notebook== False: 
-            with open('../pkl_files/neighModel.pkl', 'wb') as f:
-                   pickle.dump(neighModel, f)
-        elif self.notebook== True: 
-            with open('pkl_files/neighModel.pkl', 'wb') as f:
-                   pickle.dump(neighModel, f)    
+        
+        with open(self.pkl_path+'neighModel.pkl', 'wb') as f:
+               pickle.dump(neighModel, f)
 
     def suggestmeabook(self,text):
         
@@ -168,33 +161,26 @@ class suggestModel():
         text_list.append(text)
         df_single=pd.DataFrame()
         df_single['text']=text_list
-        if self.notebook== False: 
-            with open('../pkl_files/tfidfvectorizer.pkl', 'rb') as f:
-                tfidfvectorizer = pickle.load(f)  
-        elif self.notebook== True: 
-            with open('pkl_files/tfidfvectorizer.pkl', 'rb') as f:
-                tfidfvectorizer = pickle.load(f)       
+       
+        with open(self.pkl_path+'tfidfvectorizer.pkl', 'rb') as f:
+            tfidfvectorizer = pickle.load(f)  
+       
+        with open(self.pkl_path+'tfidftransformer.pkl', 'rb') as f:
+            tfidftransformer = pickle.load(f)  
         
-        if self.notebook== False: 
-            with open('../pkl_files/tfidftransformer.pkl', 'rb') as f:
-                tfidftransformer = pickle.load(f)  
-        elif self.notebook== True: 
-            with open('pkl_files/tfidftransformer.pkl', 'rb') as f:
-                tfidftransformer = pickle.load(f)  
                 
         df_text_vector = tfidfvectorizer.transform(df_single['text'])
         df_text_tfidf = tfidftransformer.transform(df_text_vector)
-        if self.notebook== False: 
-            with open('../pkl_files/neighModel.pkl', 'rb') as f:
-                neighModel = pickle.load(f)  
-        elif self.notebook== True: 
-            with open('pkl_files/neighModel.pkl', 'rb') as f:
-                neighModel = pickle.load(f)  
+        
+        with open(self.pkl_path+'neighModel.pkl', 'rb') as f:
+            neighModel = pickle.load(f)  
+    
         y_pred = neighModel.kneighbors(df_text_tfidf)
         
         df_merge=pd.read_csv(self.df_merge_path)
         df_book=pd.read_csv(self.df_bookauthor_path)
-       
+        # df_book=df_book[df_book['bookPrinttype']=='BOOK']
+        
         for i in range(len(y_pred[1][0])):
             if i == 0:
                 sample_dfs=df_book[df_book['bookID']==df_merge.iloc[y_pred[1][0][i]]['bookID']]
@@ -204,7 +190,7 @@ class suggestModel():
         
         first_pass=sample_dfs.drop_duplicates(subset='book', keep="first")   
         second_pass=first_pass.loc[first_pass.book.str.extract(r'(.*):').drop_duplicates().index]
-        second_pass.dropna(subset=['bookImage'],inplace=True)
+
         
         sampleFive=second_pass.sample(n=5)
         sampleFive.reset_index(drop=True,inplace=True)
@@ -224,7 +210,7 @@ class suggestModel():
 
 if __name__ == '__main__':
     
-    suggestModelClass=suggestModel(df_corpus_path='../data/df_corpus.csv',df_bookauthor_path='../data/df_bookauthor.csv',df_merge_path='../data/df_merge.csv',notebook=False)
+    suggestModelClass=suggestModel(notebook=False)
     df_clean=suggestModelClass.cleanText()
     suggestModelClass.trainData()
     text= 'books like fiction, like the alchemist and the hundred years of solitude'
